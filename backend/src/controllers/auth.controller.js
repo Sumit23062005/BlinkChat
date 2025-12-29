@@ -36,10 +36,12 @@ export const signup = async (req, res) => {
             email,
             password: hashedPassword
         });
-        
-        // Generate token and save user
-        await newUser.save();
-        generateToken(newUser._id, res);
+    
+
+           if(newUser)  { 
+        //persist user first then issue auth cookie 
+        const savedUser = await newUser.save();
+        generateToken(savedUser._id, res); 
         
         res.status(201).json({
             _id: newUser._id,
@@ -47,6 +49,9 @@ export const signup = async (req, res) => {
             email: newUser.email,
             profilePic: newUser.profilePic
         });
+
+        //todo : send welcome email 
+    }
         
     } catch (error) {
         console.log("Error in signup controller", error);
