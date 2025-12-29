@@ -2,7 +2,7 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import { generateToken } from '../lib/utils.js';
 import { sendWelcomeEmail } from '../emails/emailHandlers.js';
-import  {ENV } from '../lib/env.js' ;
+import { ENV } from '../lib/env.js';
 
 export const signup = async (req, res) => {
    try {
@@ -38,34 +38,67 @@ export const signup = async (req, res) => {
             email,
             password: hashedPassword
         });
-    
-
-           if(newUser)  { 
-        //persist user first then issue auth cookie 
+        
+        // Persist user first then issue auth cookie 
         const savedUser = await newUser.save();
         generateToken(savedUser._id, res); 
         
         res.status(201).json({
-            _id: newUser._id,
-            fullName: newUser.fullName,
-            email: newUser.email,
-            profilePic: newUser.profilePic
+            _id: savedUser._id,
+            fullName: savedUser.fullName,
+            email: savedUser.email,
+            profilePic: savedUser.profilePic
         });
 
-        //todo : send welcome email 
+        // Send welcome email 
         try {
             await sendWelcomeEmail(savedUser.email, savedUser.fullName, ENV.CLIENT_URL);    
-
-            
         } catch (error) { 
-            console.error("Error sending welcome email:" , error) ;
+            console.error("Error sending welcome email:", error);
         }
-
-
-    }
         
     } catch (error) {
         console.log("Error in signup controller", error);
         res.status(500).json({message: "Internal Server Error"});
     }
+};
+
+export const login = async (req, res) => {
+    const {email, password} = req.body;
+    try {
+        // Validation
+        if(!email || !password) {
+            return res.status(400).json({message: "All fields are required"});
+        }
+
+        const user = await User.findOne({email});
+        if(!user){
+            return res.status(400).json({message: "Invalid Credentials"})
+        }
+        
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        
+        // Check password before proceeding
+        if(!isPasswordCorrect) {
+            return res.status(400).json({message: "Invalid Credentials"});
+        }
+        
+        generateToken(user._id, res);
+        
+        res.status(200).json({
+            _id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            profilePic: user.profilePic
+        });
+        
+    } catch (error) {
+        console.error("Error in login controller:", error);
+        res.status(500).json({message: "Internal Server Error"});
+    }
+};
+
+export const logout = (_, res) => {
+    res.cookie("jwt", "", {maxAge: 0});
+    res.status(200).json({message: "Logged out successfully"});
 };
