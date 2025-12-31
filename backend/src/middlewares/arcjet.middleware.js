@@ -9,21 +9,26 @@ export const arcjetProtection = async (req ,res ,next) => {
                 return res.status(429).json({message : "Rate limit exceeded , Please try again later "}) ;
             }
 
-        else if(decision.reason.isBot()){
-            return res.status(403).json({message : "Bot access denied "}) ;
+            else if(decision.reason.isBot()){
+                // Allow in development mode
+                if(process.env.NODE_ENV === 'development') {
+                    console.log('Bot detected but allowing in development mode');
+                    return next();
+                }
+                return res.status(403).json({message : "Bot access denied "}) ;
 
-        }else {
-            return res.status(403).json({message : "Access denied by security policy "}) ;
+            }else {
+                return res.status(403).json({message : "Access denied by security policy "}) ;
+            }
         }
-    }
-    // check for spoofed bots
-    if(decision.results.some(isSpoofedBot)){
-        return res.status(403).json({
-            error  : "Spoofed bot detected ",
-            message : "Malicious activity detected." ,
-        });
-    }
-    next() ;
+        // check for spoofed bots
+        if(decision.results.some(isSpoofedBot)){
+            return res.status(403).json({
+                error  : "Spoofed bot detected ",
+                message : "Malicious activity detected." ,
+            });
+        }
+        next() ;
 
     } catch (error) {
         console.log("Arcject Protection error :" , error );
