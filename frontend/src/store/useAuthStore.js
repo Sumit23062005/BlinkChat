@@ -6,6 +6,7 @@ export const useAuthStore  = create((set) => ({
    authUser : null ,
     isCheckingAuth : true ,
     isSigningUp : false ,
+    isLogginIn : false ,
 
     checkAuth : async () => {
         try {
@@ -36,5 +37,34 @@ console.log("Error in signup :", error);
         } finally {
             set({isSigningUp : false}) ;
         }
+    },
+    login : async(data) => {
+        set({isLogginIn : true }) ;
+        try {
+            const res = await axiosInstance.post("/auth/login" , data) ;
+            set({authUser : res.data}) ;
+            toast.success("Logged in successfully!") ;
+            
+        } catch (error) {
+console.log("Error in signup :", error);
+            toast.error(error.response?.data?.message || "Network error. Please check if backend is running.");
+            
+            
+        } finally {
+            set({isLogginIn : false}) ;
+        }
+    },
+    logout: async() => {
+        try {
+            await axiosInstance.post("/auth/logout") ;
+            set({authUser : null}) ;
+            toast.success("Logged out successfully!");
+        } catch (error) {
+            toast.error("Error Logging out"); 
+            console.log("Logout error:", error) ;
+            
+        }
     }
+
+
 }));
