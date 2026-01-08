@@ -33,15 +33,16 @@ function ChatContainer() {
       {messages.length > 0 && !isMessagesLoading ? (
          <div className='max-w-3xl mx-auto space-y-6'>
           {messages.map(msg => (
-            <div key={msg._id} className={`chat ${msg.senderId.toString() === authUser._id.toString() ? "chat-end" : "chat-start"}`}>
-            <div className={`chat-bubble relative ${
-              msg.senderId.toString() === authUser._id.toString() ? "bg-cyan-600 text-white" : "bg-slate-800 text-slate-200"
-            }`}>
+          <div key={msg._id} 
+  className={`chat ${msg.senderId?.toString() === authUser._id?.toString() ? "chat-end" : "chat-start"}`}>
+  <div className={`chat-bubble relative ${
+    msg.senderId?.toString() === authUser._id?.toString() ? "bg-cyan-600 text-white" : "bg-slate-800 text-slate-200"
+  }`}>
               {msg.image && (
                 <img src={msg.image} alt="Shared" className='rounded-lg h-48 object-cover'/> 
               )}
               {msg.text && <p className='mt-2'>{msg.text}</p>}
-              {/* {new Date(msg.createdAt).toISOString().slice(11,16)} */}
+            
               {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
 
               }

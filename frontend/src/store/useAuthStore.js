@@ -1,18 +1,24 @@
 import {create} from 'zustand' ;
 import { axiosInstance } from '../lib/axios.js' ;
 import toast from 'react-hot-toast';
+import {io } from 'socket.io-client' ;
+const BASE_URL  =  import.meta.env.MODE ===  "development" ? "http://localhost:3000" : "/" ;
 
-export const useAuthStore  = create((set) => ({
+
+export const useAuthStore  = create((set , get) => ({
    authUser : null ,
     isCheckingAuth : true ,
     isSigningUp : false ,
     isLogginIn : false ,
+    socket : null ,
+    onlineUsers : [] ,
+
 
     checkAuth : async () => {
         try {
             const res = await axiosInstance.get("/auth/check") ;
             set({authUser : res.data}) ;
-            
+            get().connectSocket() ;
         } catch (error) {
             console.log("Error in authChack :", error );
             set({authUser : null}) ;
@@ -28,7 +34,7 @@ export const useAuthStore  = create((set) => ({
             const res = await axiosInstance.post("/auth/signup" , data) ;
             set({authUser : res.data}) ;
             toast.success("Account created successfully!") ;
-            
+            get().connectSocket() ;
         } catch (error) {
 console.log("Error in signup :", error);
             toast.error(error.response?.data?.message || "Network error. Please check if backend is running.");
@@ -44,7 +50,7 @@ console.log("Error in signup :", error);
             const res = await axiosInstance.post("/auth/login" , data) ;
             set({authUser : res.data}) ;
             toast.success("Logged in successfully!") ;
-            
+            get().connectSocket() ;
         } catch (error) {
 console.log("Error in signup :", error);
             toast.error(error.response?.data?.message || "Network error. Please check if backend is running.");
@@ -59,6 +65,7 @@ console.log("Error in signup :", error);
             await axiosInstance.post("/auth/logout") ;
             set({authUser : null}) ;
             toast.success("Logged out successfully!");
+            get().disconnectSocket() ;
         } catch (error) {
             toast.error("Error Logging out"); 
             console.log("Logout error:", error) ;
@@ -78,7 +85,35 @@ console.log("Error in signup :", error);
 
             
         }
-    }
+    },
+
+    connectSocket : () => {
+        const {authUser } = get() ;
+        if(!authUser || get().socket?.connected) return ;
+       
+        const socket = io(BASE_URL , {
+            query : {
+                userId : authUser._id 
+            },
+
+            withCredentials : true   // this ensures cookies are sent with the connection 
+        })
+
+        socket.connect() ;
+        set({socket}) ;
+        
+        //listen for online users event
+
+        socket.on("getOnlineUsers" , (userIds) => {
+            set({ onlineUsers : userIds }) ;
+
+        }) ;
+    },
+
+   disconnectSocket: () => {
+    if (get().socket?.connected) get().socket.disconnect();
+},
+
 
 
 }));
