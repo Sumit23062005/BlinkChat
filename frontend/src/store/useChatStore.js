@@ -2,6 +2,8 @@ import {create} from 'zustand' ;
 import { axiosInstance } from '../lib/axios.js' ;
 import toast from 'react-hot-toast' ;
 import { useAuthStore } from './useAuthStore.js' ;
+
+
 export const useChatStore  = create((set , get) => ({
      allContacts : [] ,
      chats : [] ,
@@ -87,6 +89,32 @@ toast.error(error.response?.data?.message || "Failed to load contacts");
         set({messages : messages}) ;
         toast.error(error.response?.data?.message || "something went wrong")
       }
-     }
+     },
 
+     subscribeToMessages : () => {
+       const { selectedUser , isSoundEnabled} = get() ;
+       if(!selectedUser) return null ;
+
+       const socket = useAuthStore.getState().socket  ;
+
+       socket.on("newMessage" , (newMessage) => {
+
+        const isMessageSentFromSelectedUser =  newMessage.senderId === selectedUser._id ;
+        if(!isMessageSentFromSelectedUser) return ;
+        const currentMessages  =  get().messages ;
+        set({messages : [...currentMessages , newMessage] });
+        if(isSoundEnabled){
+          const notificationSound = new Audio("/notification.mp3") ;
+          notificationSound.currentTime = 0 ;
+          notificationSound.play().catch((e) => {
+            console.log("Error playing sound:", e);
+          })
+        }
+       })
+     },
+    
+     unsubscribeFromMessages : () => {
+      const socket = useAuthStore.getState().socket  ;
+      socket.off("newMessage") ;
+     },
 })) ;

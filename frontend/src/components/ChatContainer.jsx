@@ -6,15 +6,19 @@ import NoChatHistoryPlaceHolder from './NoChatHistoryPlaceHolder.jsx';
 import MessageInput from './MessageInput.jsx';
 import MessagesLoadingSkeleton from './MessagesLoadingSkeleton.jsx';
 function ChatContainer() {
-  const { selectedUser, getMessagesByUserId , messages , isMessagesLoading} = useChatStore() ;
+  const { selectedUser, getMessagesByUserId , messages , isMessagesLoading , subscribeToMessages, unsubscribeFromMessages} = useChatStore() ;
   const {  authUser} = useAuthStore() ;
   const messageEndRef = React.useRef(null) ;
 
 
   useEffect(() => {
     getMessagesByUserId(selectedUser._id);
+    subscribeToMessages() ;
+    return () => {
+      unsubscribeFromMessages() ;
+    }
 
-  },[selectedUser, getMessagesByUserId]) ;
+  },[selectedUser, getMessagesByUserId, subscribeToMessages, unsubscribeFromMessages]) ;
 
   useEffect(() => {
     if(messageEndRef.current) {
@@ -31,10 +35,10 @@ function ChatContainer() {
    <ChatHeader /> 
    <div className='flex-1 px-6 overflow-y-auto py-8'>
       {messages.length > 0 && !isMessagesLoading ? (
-         <div className='max-w-3xl mx-auto space-y-6'>
-          {messages.map(msg => (
-          <div key={msg._id} 
-  className={`chat ${msg.senderId?.toString() === authUser._id?.toString() ? "chat-end" : "chat-start"}`}>
+      <div className='max-w-3xl mx-auto space-y-6'>
+        {messages.map(msg => (
+        <div key={msg._id} 
+className={`chat ${msg.senderId?.toString() === authUser._id?.toString() ? "chat-end" : "chat-start"}`}>
   <div className={`chat-bubble relative ${
     msg.senderId?.toString() === authUser._id?.toString() ? "bg-cyan-600 text-white" : "bg-slate-800 text-slate-200"
   }`}>

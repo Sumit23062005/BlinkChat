@@ -5,6 +5,7 @@ import { sendWelcomeEmail } from '../emails/emailHandlers.js';
 import { ENV } from '../lib/env.js';
 import cloudinary from '../lib/cloudinary.js';
 
+
 export const signup = async (req, res) => {
    try {
         const {fullName, email, password} = req.body;
